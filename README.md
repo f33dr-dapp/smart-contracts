@@ -21,8 +21,6 @@ The following tools are not required but highly recommended for a better coding 
 
 - **Git** of course :-)
 - **Node JS:** Make sure to have [Node JS](https://nodejs.org/en/download/) installed.
-- **Infura:** Create an [Infura](https://infura.io/) account and project and get the project id
-- **Etherscan:** Create an [Etherscan](https://etherscan.io/) account and api key
 - **pyenv-virtualenv** :
 
   - Mac OS:
