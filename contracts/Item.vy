@@ -71,11 +71,16 @@ symbol: public(String[32])
 baseUri: public(String[128])
 
 maxSupply: public(uint256)
-tokenMetadata: public(HashMap[uint256, Metadata])
 ownerToTokenIndex: HashMap[address, HashMap[uint256, uint256]]
 tokenToChildren: public(HashMap[uint256, HashMap[uint256, bool]])
 tokenToChildrenCount: public(HashMap[uint256, uint256])
 
+# Metadata
+tokenContent: public(HashMap[uint256, String[128]])
+tokenPublisher: public(HashMap[uint256, address])
+tokenDatetime: public(HashMap[uint256, uint256])
+tokenParentId: public(HashMap[uint256, uint256])
+    
 
 # @dev Static list of supported ERC165 interface ids
 SUPPORTED_INTERFACES: constant(bytes4[2]) = [
@@ -92,7 +97,6 @@ def __init__(_name: String[32], _symbol: String[32], _baseUri: String[128], _add
     self.baseUri = _baseUri
     addressBook = AddressBook(_addressBook)
 
-
 @pure
 @external
 def supportsInterface(interface_id: bytes4) -> bool:
@@ -103,7 +107,15 @@ def supportsInterface(interface_id: bytes4) -> bool:
     return interface_id in SUPPORTED_INTERFACES
 
 ### VIEW FUNCTIONS ###
+@external
 @view
+def totalSupply() -> uint256:
+    """
+    @dev Returns the total amount of tokens generated
+    """
+    return self.maxSupply
+@view
+
 @external
 def balanceOf(_owner: address) -> uint256:
     """
@@ -358,19 +370,18 @@ def mint(to: address, content: String[128], parentId: uint256 = 0) -> bool:
     """
     assert msg.sender == addressBook.addressOf("Minter")
     assert parentId <= self.maxSupply
-    assert self.tokenMetadata[parentId].parentId == 0
+    assert self.tokenParentId[parentId] == 0
 
     self.maxSupply += 1
     _tokenId: uint256 = self.maxSupply
     
     # Add NFT. Throws if `_tokenId` is owned by someone
     self._addTokenTo(to, _tokenId)
-    self.tokenMetadata[_tokenId] = Metadata({
-        content: content,
-        publisher: to,
-        datetime: block.timestamp,
-        parentId: parentId
-    })
+    self.tokenContent[_tokenId] = content
+    self.tokenPublisher[_tokenId] = to
+    self.tokenDatetime[_tokenId] = block.timestamp
+    self.tokenParentId[_tokenId] = parentId
+    
     
     if parentId > 0:
         self.tokenToChildren[parentId][_tokenId] = True
@@ -389,6 +400,21 @@ def isValidContract(_name: String[12]) -> bool:
 
     return _name == "Item"
 
+@internal
+@view
+def _tokenMetadata(_tokenId: uint256) -> Metadata:
+    return  Metadata({
+        content: self.tokenContent[_tokenId],
+        publisher: self.tokenPublisher[_tokenId],
+        datetime: self.tokenDatetime[_tokenId],
+        parentId: self.tokenParentId[_tokenId],
+    })
+
+@external
+@view
+def tokenMetadata(_tokenId: uint256) -> Metadata:
+    return self._tokenMetadata(_tokenId)
+
 @external
 @view
 def tokenURI(_tokenId: uint256) -> String[9000]:
@@ -399,8 +425,8 @@ def tokenURI(_tokenId: uint256) -> String[9000]:
     toString: ToString = ToString(addressBook.addressOf("ToString"))
     likes: Likes = Likes(addressBook.addressOf("Likes"))
 
-    metadata: Metadata = self.tokenMetadata[_tokenId]
-
+    metadata: Metadata = self._tokenMetadata(_tokenId)
+    
     json: String[9000] = concat(
         "{",
         '"name": "',

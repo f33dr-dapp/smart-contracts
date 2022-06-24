@@ -10,16 +10,10 @@ interface AddressBook:
     def addressOf(_type: String[12]) -> address: view
     def governance() -> address: view
 
-struct Metadata:
-    content: String[128]
-    publisher: address
-    datetime: uint256
-    parentId: uint256
-
 interface Item:
     def ownerOf(_tokenId: uint256) -> address: view
     def mint(to: address, content: String[128], parentId: uint256) -> bool: nonpayable
-    def tokenMetadata(arg0: uint256) -> Metadata: view
+    def tokenParentId(arg0: uint256) -> uint256: view
 
 interface Profile:
     def setProfile(
@@ -98,7 +92,7 @@ def like(_itemId: uint256):
     likesContract: Likes = Token(addressBook.addressOf("Likes"))
 
     ownerOfItem: address = itemContract.ownerOf(_itemId)
-    parentId: uint256 = itemContract.tokenMetadata(_itemId).parentId
+    parentId: uint256 = itemContract.tokenParentId(_itemId)
     ownerToPay: address = ownerOfItem
 
     if (parentId > 0):
