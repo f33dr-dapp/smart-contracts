@@ -84,6 +84,8 @@ def mint(_to: address, _value: uint256):
     
     self.totalSupply += _value
     self.balanceOf[_to] += _value
+    log Transfer(ZERO_ADDRESS, _to, _value)
+
 
 @external
 def burn(_from: address, _value: uint256):
@@ -94,6 +96,7 @@ def burn(_from: address, _value: uint256):
     
     self.balanceOf[_from] -= _value
     self.totalSupply -= _value
+    log Transfer(_from, ZERO_ADDRESS, _value)
 
 
 @external
